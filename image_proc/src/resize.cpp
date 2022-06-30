@@ -115,14 +115,16 @@ void ResizeNode::imageCb(
     return;
   }
 
+  cv::Mat img = cv_ptr->image;
+
   if (use_scale_) {
     cv::resize(
-      cv_ptr->image, cv_ptr->image, cv::Size(0, 0), scale_width_,
+      img, img, cv::Size(0, 0), scale_width_,
       scale_height_, interpolation_);
   } else {
     int height = height_ == -1 ? image_msg->height : height_;
     int width = width_ == -1 ? image_msg->width : width_;
-    cv::resize(cv_ptr->image, cv_ptr->image, cv::Size(width, height), 0, 0, interpolation_);
+    cv::resize(img, img, cv::Size(width, height), 0, 0, interpolation_);
   }
 
   sensor_msgs::msg::CameraInfo::SharedPtr dst_info_msg =
@@ -159,6 +161,7 @@ void ResizeNode::imageCb(
   dst_info_msg->roi.width = static_cast<int>(dst_info_msg->roi.width * scale_x);
   dst_info_msg->roi.height = static_cast<int>(dst_info_msg->roi.height * scale_y);
 
+  cv_ptr->image = img;
   pub_image_.publish(*cv_ptr->toImageMsg(), *dst_info_msg);
 
   TRACEPOINT(
