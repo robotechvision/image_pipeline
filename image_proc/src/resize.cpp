@@ -46,18 +46,35 @@
 namespace image_proc
 {
 
+inline rmw_qos_profile_t qosProfileFromString(std::string name)
+{
+  if (name == "sensor_data")
+    return rmw_qos_profile_sensor_data;
+  else if (name == "default")
+    return rmw_qos_profile_default;
+  else if (name == "system_default")
+    return rmw_qos_profile_system_default;
+  else
+    return rmw_qos_profile_unknown;
+}
+
 ResizeNode::ResizeNode(const rclcpp::NodeOptions & options)
 : rclcpp::Node("ResizeNode", options)
 {
   // Create image pub
-  pub_image_ = image_transport::create_camera_publisher(this, "resize/image_raw");
+  std::string pub_qos = this->declare_parameter("publisher_qos", "sensor_data");
+  pub_image_ = image_transport::create_camera_publisher(
+    this, "resize/image_raw", qosProfileFromString(pub_qos));
+  std::string transport = this->declare_parameter("transport", "raw");
+  std::string sub_qos = this->declare_parameter("subscription_qos", "sensor_data");
   // Create image sub
   sub_image_ = image_transport::create_camera_subscription(
     this, "image/image_raw",
     std::bind(
       &ResizeNode::imageCb, this,
       std::placeholders::_1,
-      std::placeholders::_2), "raw");
+      std::placeholders::_2),
+    transport, qosProfileFromString(sub_qos));
 
   interpolation_ = this->declare_parameter("interpolation", 1);
   use_scale_ = this->declare_parameter("use_scale", true);
